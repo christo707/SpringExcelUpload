@@ -1,15 +1,30 @@
 package com.cognizant.tasks.ExcelTask;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -112,6 +127,39 @@ public class ChoreController {
       	
       } else 
       	return new ResponseEntity<String>("Fail to Read Excel", HttpStatus.BAD_REQUEST);
+	}
+	
+	@RequestMapping(path = "/download", method = RequestMethod.GET, produces="application/octet-stream")
+	public HttpEntity download(HttpServletResponse response) throws IOException, InvalidFormatException {
+
+		List<Chore> chores = choreServiceImp.getChores();
+		ReadChoreFromExcel test = new ReadChoreFromExcel();
+		boolean b = test.write(chores);
+
+		if(b){
+			
+			 File excel = new File("chores.xlsx");
+
+		        InputStream is = new FileInputStream(excel);
+
+		        response.setHeader("Content-Disposition", "attachment;filename=\"chores.xlsx\"");
+		        response.setHeader("Content-Type", "application/octet-stream");
+		        StreamUtils.copy(is ,response.getOutputStream());
+		        is.close();
+		        return new ResponseEntity(HttpStatus.OK);
+			
+//			java.io.File file = new java.io.File("chores.xlsx");
+//		    Path path = Paths.get(file.getAbsolutePath());
+//		    System.out.println(path);
+//		    ByteArrayResource resource = new ByteArrayResource(Files.readAllBytes(path));
+//
+//		    return ResponseEntity.ok()
+//		            .contentLength(file.length())
+//		            .contentType(MediaType.parseMediaType("application/octet-stream"))
+//		            .body(resource);
+		}
+		 return new ResponseEntity(HttpStatus.NO_CONTENT);
+		            
 	}
 	
 }
